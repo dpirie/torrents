@@ -1,0 +1,132 @@
+# 1.   https://github.com/sebgl/htpc-download-box
+# 2.   https://www.smarthomebeginner.com/docker-home-media-server-2018-basic/
+# 3.   https://blog.swakes.co.uk/automated-media-box-part3/
+
+version: "2.2"
+services:
+
+  plex:
+    container_name: plex
+    image: plexinc/pms-docker:plexpass
+    restart: unless-stopped
+    environment:
+      - TZ="${TZ}"
+      - PLEX_UID=${PUID}
+      - PLEX_GID=${PGID}
+      - ADVERTISE_IP="http://${HOST_IP}:32400/"
+    volumes:
+      - "/media:/media:rw"
+      - "/vault/home/plex:/config:rw"
+      - "/vault/home/plex/Scripts:/config/Library/Application Support/Plex Media Server/Scripts:rw"
+    ports:
+      - "32400:32400/tcp"
+      - "3005:3005/tcp"
+      - "8324:8324/tcp"
+      - "32469:32469/tcp"
+      - "1900:1900/udp"
+      - "32410:32410/udp"
+      - "32412:32412/udp"
+      - "32413:32413/udp"
+      - "32414:32414/udp"
+
+  torrent:
+    container_name: torrent
+    image: horjulf/rutorrent-autodl
+    restart: unless-stopped
+    environment:
+      - TZ="${TZ}"
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - "/vault/home/torrents:/config:rw"
+      - "/media:/media:rw"
+    ports:
+      - "8081:80"
+      - "5000:5000"
+      - "51413:51413"
+      - "6881:6881/udp"
+
+  deluge:
+    container_name: deluge
+    image: linuxserver/deluge:latest
+    restart: unless-stopped
+    network_mode: host   # This is Required
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - UMASK_SET=022
+#     - DELUGE_LOGLEVEL=error
+    volumes:
+#     - "/media:/downloads"
+      ## This and Sonarr have to use the same path. Mounting all of Media allows it to make hard links.
+      - "/media:/media"
+      - "/vault/home/deluge:/config"
+
+  sonarr:
+    container_name: sonarr
+    image: linuxserver/sonarr:latest
+    restart: unless-stopped
+    ports:
+      - "8989:8989"
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+      - UMASK_SET=002
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - "/vault/home/sonarr:/config"
+      - "/media:/media"
+#     - "/media/completed:/downloads"
+#     - "/media/tv-shows:/tv"
+
+  # https://forums.plex.tv/t/plex-dvr-linux-docker-post-processing-script-using-handbrake-to-compress-video-and-retaining-close-caption/492673
+  # https://github.com/jlesage/docker-handbrake
+  handbrake:
+    container_name: handbrake
+    image: jlesage/handbrake
+    restart: unless-stopped
+    environment:
+      - TZ="${TZ}"
+      - USER_ID=${PUID}
+      - GROUP_ID=${PGID}
+      - UMASK=002
+      - AUTOMATED_CONVERSION_FORMAT=mkv
+      - AUTOMATED_CONVERSION_PRESET=Custom/H.264 MKV 1080p30 Add CC
+      - AUTOMATED_CONVERSION_KEEP_SOURCE=0
+      - KEEP_APP_RUNNING=1
+    ports:
+      - "5800:5800"
+    volumes:
+      - "/vault/home/handbrake:/config:rw"
+      - "/media/transcode/hb_watch:/watch:rw"
+      - "/media/transcode/hb_output:/output:rw"
+     #- "$HOME:/storage:ro"
+
+  organizr:
+    image: organizr/organizr
+    container_name: organizr
+    volumes:
+      - "/vault/home/organizr:/config:rw"
+    environment:
+      - TZ="${TZ}"
+      - PUID=${PUID}
+      - PGID=${PGID}
+    ports:
+      - "8888:80/tcp"
+
+  unifi:
+    image: jacobalberty/unifi:stable
+    container_name: unifi-controller
+    network_mode: "host"
+    init: true
+    environment:
+      - TZ=${TZ}
+      - RUNAS_UID0=false
+      - UNIFI_UID=${PUID}
+      - UNIFI_GID=${PGID}
+    volumes:
+      - "/vault/home/unifi:/unifi:rw"
+    restart: unless-stopped
+
