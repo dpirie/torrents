@@ -46,6 +46,11 @@ services:
       - "51413:51413"
       - "6881:6881/udp"
 
+  # Get the latest download URL for Deluge Extractor (https://github.com/cvarta/deluge-extractor/releases), then:
+  # Having said that, the last release was years ago, so it's likely exactly the same as below:
+  #       cd /vault/home/deluge/plugins/ 
+  #       sudo chmod 775 .
+  #       curl -O https://github.com/cvarta/deluge-extractor/releases/download/v.0.4.1/SimpleExtractor-0.4.1-py2.7.egg
   deluge:
     container_name: deluge
     image: linuxserver/deluge:latest
@@ -55,7 +60,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
-      - UMASK_SET=022
+      - UMASK_SET=002
 #     - DELUGE_LOGLEVEL=error
     volumes:
 #     - "/media:/downloads"
@@ -78,8 +83,56 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - "/vault/home/sonarr:/config"
       - "/media:/media"
-#     - "/media/completed:/downloads"
-#     - "/media/tv-shows:/tv"
+
+  jackett:
+    container_name: jackett
+    image: linuxserver/jackett:latest
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+      - UMASK_SET=002 #optional
+      - AUTO_UPDATE=true #optional
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /vault/home/deluge/torrents:/downloads # place where to put .torrent files for manual download
+      - /vault/home/jackett:/config
+    ports:
+      - 9117:9117
+
+  radarr:
+    container_name: radarr
+    image: linuxserver/radarr:latest
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+      - UMASK_SET=002 #optional
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /vault/home/radarr:/config # config files
+      - /media:/media
+    ports:
+      - 7878:7878
+
+  nzbget:
+    container_name: nzbget
+    image: linuxserver/nzbget:latest
+    #image: ghcr.io/linuxserver/nzbget
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+      - UMASK_SET=002 #optional
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /vault/home/nzbget:/config # config files
+      - /media:/media
+    ports:
+      - 16789:6789
 
   # https://forums.plex.tv/t/plex-dvr-linux-docker-post-processing-script-using-handbrake-to-compress-video-and-retaining-close-caption/492673
   # https://github.com/jlesage/docker-handbrake
@@ -107,6 +160,7 @@ services:
   organizr:
     image: organizr/organizr
     container_name: organizr
+    restart: unless-stopped
     volumes:
       - "/vault/home/organizr:/config:rw"
     environment:
