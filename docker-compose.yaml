@@ -120,7 +120,6 @@ services:
   nzbget:
     container_name: nzbget
     image: linuxserver/nzbget:latest
-    #image: ghcr.io/linuxserver/nzbget
     restart: unless-stopped
     environment:
       - PUID=${PUID} # default user id, defined in .env
