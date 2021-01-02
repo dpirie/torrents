@@ -200,6 +200,12 @@ A simple Linux-Server Project image with Sonarr installed on it.
 * Will require some [configuration](https://github.com/sebgl/htpc-download-box#configuration-2) after things are running, to orchestrate all the containers.
 * The private torrent site I use is natively indexed by Sonarr, so I don't have to run Jackett or a VPN.
 
+### Jackett, Radarr and NZBGet
+
+Inspiration and most of the configs are based on [this article](https://github.com/sebgl/htpc-download-box).
+* Note the port-mapping for nzbget isn't straight through. I was getting port conflicts from deluge.
+* You need both a Usenet Indexer and Usenet Provider. In both cases, you can try and futz around with free, but you'll have better luck paying a small amount for each.
+
 ### Handbrake
 
 The HDHomeRun device and Plex PVR just record the raw MPEG2 stream. This is fine for shows that I watch and delete, but for shows I want to archive, I transcode them so they're much smaller for long-term storage.
