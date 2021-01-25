@@ -230,3 +230,19 @@ There are far too many port numbers to remember. This too has all sorts of plugi
 
 An image of the Ubiquiti Network Controller software to mange my network gear.
 
+### USG and PiHole Configuration
+
+I have PiHole running on an old Raspberry Pi. To get it all working correctly with the USG, I configured them like [this](https://www.reddit.com/r/Ubiquiti/comments/9aymzx/usg_with_pihole_whats_the_best_way_to_do_dnsdhcp/#t1_e50afq5)
+
+The install was a base install of [DietPi](https://dietpi.com/). I chose it mostly because by default it logs to RAM, which will drastically improve the lifespan of the MicroSD card.  Their software installer has a package for Pi Hole.
+
+This list of domains gave me good ad blocking without breaking other applications:
+```
+https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+https://mirror1.malwaredomains.com/files/justdomains
+http://sysctl.org/cameleon/hosts
+https://s3.amazonaws.com/lists.disconnect.me/simple_tracking.txt
+https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt
+https://hosts-file.net/ad_servers.txt
+```
+
