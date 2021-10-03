@@ -23,6 +23,7 @@ services:
       - "3005:3005/tcp"
       - "8324:8324/tcp"
       - "32469:32469/tcp"
+        # If Plex won't start because of a port conflict, stop deluge, then start plex.
       - "1900:1900/udp"
       - "32410:32410/udp"
       - "32412:32412/udp"
@@ -74,6 +75,10 @@ services:
     restart: unless-stopped
     ports:
       - "8989:8989"
+    depends_on:
+      - jackett
+      - deluge
+      - nzbget
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
@@ -110,6 +115,10 @@ services:
       - PGID=${PGID} # default group id, defined in .env
       - TZ=${TZ} # timezone, defined in .env
       - UMASK_SET=002 #optional
+    depends_on:
+      - jackett
+      - deluge
+      - nzbget
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /vault/home/radarr:/config # config files
@@ -169,17 +178,43 @@ services:
     ports:
       - "8888:80/tcp"
 
-  unifi:
-    image: jacobalberty/unifi:stable
-    container_name: unifi-controller
-    network_mode: "host"
-    init: true
+# unifi:
+#   image: jacobalberty/unifi:stable
+#   container_name: unifi-controller
+#   network_mode: "host"
+#   init: true
+#   environment:
+#     - TZ=${TZ}
+#     - RUNAS_UID0=false
+#     - UNIFI_UID=${PUID}
+#     - UNIFI_GID=${PGID}
+#   volumes:
+#     - "/vault/home/unifi:/unifi:rw"
+#   restart: unless-stopped
+
+  homebridge:
+    image: oznu/homebridge:latest
+    container_name: homebridge
+    restart: always
+    network_mode: host
     environment:
       - TZ=${TZ}
-      - RUNAS_UID0=false
-      - UNIFI_UID=${PUID}
-      - UNIFI_GID=${PGID}
+      - PGID=${PUID}
+      - PUID=${PGID}
+      - HOMEBRIDGE_CONFIG_UI=1
+      - HOMEBRIDGE_CONFIG_UI_PORT=8082
     volumes:
-      - "/vault/home/unifi:/unifi:rw"
-    restart: unless-stopped
+       - "/vault/home/homebridge:/homebridge:rw"
 
+  unpackerr:
+    image: "golift/unpackerr"
+    container_name: "unpackerr"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - "/vault/home/unpackerr/unpackerr.conf:/etc/unpackerr/unpackerr.conf"
+      - "/media:/media"
+    restart: always
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
