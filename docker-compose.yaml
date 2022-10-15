@@ -29,6 +29,11 @@ services:
       - "32412:32412/udp"
       - "32413:32413/udp"
       - "32414:32414/udp"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://192.168.0.2:12201"
+        tag: "plex"
 
   torrent:
     container_name: torrent
@@ -126,6 +131,19 @@ services:
     ports:
       - 7878:7878
 
+  tautulli:
+    image: ghcr.io/tautulli/tautulli
+    container_name: tautulli
+    restart: unless-stopped
+    volumes:
+      - /vault/home/tautulli:/config # config files
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    ports:
+      - 8181:8181
+
   nzbget:
     container_name: nzbget
     image: linuxserver/nzbget:latest
@@ -218,3 +236,53 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TZ}
+
+# ELK Stack
+# https://medium.com/geekculture/shoving-your-docker-container-logs-to-elk-made-simple-882bffdbcad6
+
+  elasticsearch:
+    image: "elasticsearch:${ELK_VERSION:-7.14.1}"
+    container_name: elasticsearch
+    environment:
+     - discovery.type=single-node
+    volumes:
+       # Note that this directory must be owned by uid 1000
+     - /vault/home/elasticsearch_data/:/usr/share/elasticsearch/data
+    mem_limit: "1g"
+    ports:
+     - 9200:9200
+     - 9300:9300
+
+  redis-cache:
+    image: redis:6.2
+
+  logstash-agent:
+    image: "logstash:${ELK_VERSION:-7.14.1}"
+    hostname: logstash
+    container_name: logstash-agent
+    volumes:
+      - ./logstash-agent.conf:/etc/logstash/logstash.conf
+    command: logstash -f /etc/logstash/logstash.conf
+    depends_on:
+      - elasticsearch
+    ports:
+      - 12201:12201/udp
+
+  logstash-central:
+    image: "logstash:${ELK_VERSION:-7.14.1}"
+    container_name: logstash-central
+    volumes:
+      - ./logstash-central.conf:/etc/logstash.conf
+    command: logstash -f /etc/logstash/logstash.conf
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: "kibana:${ELK_VERSION:-7.14.1}"
+    container_name: kibana
+    ports:
+      - 5601:5601
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
