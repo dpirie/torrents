@@ -131,6 +131,25 @@ services:
     ports:
       - 7878:7878
 
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+        #- TZ=${TZ} # timezone, defined in .env
+      - UMASK_SET=002 #optional
+    depends_on:
+      - sonarr
+      - radarr
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /vault/home/bazarr:/config # config files
+      - /media:/media
+    ports:
+      - 6767:6767
+    restart: unless-stopped
+
   tautulli:
     image: ghcr.io/tautulli/tautulli
     container_name: tautulli
