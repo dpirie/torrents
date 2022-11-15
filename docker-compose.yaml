@@ -150,6 +150,20 @@ services:
       - 6767:6767
     restart: unless-stopped
 
+  readarr:
+    image: lscr.io/linuxserver/readarr:develop
+    container_name: readarr
+    environment:
+      - PUID=${PUID} # default user id, defined in .env
+      - PGID=${PGID} # default group id, defined in .env
+      - TZ=${TZ} # timezone, defined in .env
+    volumes:
+      - /vault/home/readarr:/config # config files
+      - /media:/media
+    ports:
+      - 8787:8787
+    restart: unless-stopped
+
   tautulli:
     image: ghcr.io/tautulli/tautulli
     container_name: tautulli
