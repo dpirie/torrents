@@ -255,7 +255,17 @@ services:
       - HOMEBRIDGE_CONFIG_UI=1
       - HOMEBRIDGE_CONFIG_UI_PORT=8082
     volumes:
-       - "/vault/home/homebridge:/homebridge:rw"
+      - "/vault/home/homebridge:/homebridge:rw"
+
+  homeassistant:
+    container_name: homeassistant
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    volumes:
+      - "/vault/home/homeassistant:/config:rw"
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
 
   unpackerr:
     image: "golift/unpackerr"
