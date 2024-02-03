@@ -230,38 +230,6 @@ services:
     ports:
       - "8888:80/tcp"
 
-# unifi:
-#   image: jacobalberty/unifi:stable
-#   container_name: unifi-controller
-#   network_mode: "host"
-#   init: true
-#   environment:
-#     - TZ=${TZ}
-#     - RUNAS_UID0=false
-#     - UNIFI_UID=${PUID}
-#     - UNIFI_GID=${PGID}
-#   volumes:
-#     - "/vault/home/unifi:/unifi:rw"
-#   restart: unless-stopped
-
-  esphome:
-    image: esphome/esphome:stable
-    container_name: esphome
-    environment:
-      - TZ=${TZ}
-      - PGID=${PUID}
-      - PUID=${PGID}
-      - ESPHOME_DASHBOARD_USE_PING=true
-    volumes:
-      - "/vault/home/esphome:/config:rw"
-      - /etc/localtime:/etc/localtime:ro
-    ports:
-      - 6052:6052
-    extra_hosts:
-      - "freezers.local:192.168.3.42"
-    privileged: true
-    restart: unless-stopped
-
   unpackerr:
     image: "golift/unpackerr"
     container_name: "unpackerr"
@@ -275,3 +243,13 @@ services:
       - PGID=${PGID}
       - TZ=${TZ}
 
+  tor:
+    image: "kasmweb/tor-browser:1.14.0"
+    container_name: tor
+    shm_size: 512m
+    ports:
+      - 6901:6901
+    volumes:
+      - "/media/books:/media/books"
+    environment:
+      - VNC_PW=password 
