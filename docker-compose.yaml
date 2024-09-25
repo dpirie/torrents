@@ -18,6 +18,9 @@ services:
       - "/media:/media:rw"
       - "/vault/home/plex:/config:rw"
       - "/vault/home/plex/Scripts:/config/Library/Application Support/Plex Media Server/Scripts:rw"
+    dns:
+      - "8.8.8.8"
+      - "8.8.4.4"
     ports:
       - "32400:32400/tcp"
       - "3005:3005/tcp"
@@ -46,6 +49,9 @@ services:
     volumes:
       - "/vault/home/torrents:/config:rw"
       - "/media:/media:rw"
+    dns:
+      - "8.8.8.8"
+      - "8.8.4.4"
     ports:
       - "8081:80"
       - "5000:5000"
@@ -85,6 +91,9 @@ services:
       - jackett
       - deluge
       - nzbget
+    dns:
+      - "8.8.8.8"
+      - "8.8.4.4"
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
@@ -99,6 +108,9 @@ services:
     container_name: jackett
     image: linuxserver/jackett:latest
     restart: unless-stopped
+    dns:
+      - "8.8.8.8"
+      - "8.8.4.4"
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
@@ -116,6 +128,9 @@ services:
     container_name: radarr
     image: linuxserver/radarr:latest
     restart: unless-stopped
+    dns:
+      - "8.8.8.8"
+      - "8.8.4.4"
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
@@ -143,6 +158,9 @@ services:
     depends_on:
       - sonarr
       - radarr
+    dns:
+      - "8.8.8.8"
+      - "8.8.4.4"
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /vault/home/bazarr:/config # config files
@@ -158,6 +176,9 @@ services:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
       - TZ=${TZ} # timezone, defined in .env
+    dns:
+      - "8.8.8.8"
+      - "8.8.4.4"
     volumes:
       - /vault/home/readarr:/config # config files
       - /media:/media
@@ -182,6 +203,9 @@ services:
     container_name: nzbget
     image: linuxserver/nzbget:latest
     restart: unless-stopped
+    dns:
+      - "8.8.8.8"
+      - "8.8.4.4"
     environment:
       - PUID=${PUID} # default user id, defined in .env
       - PGID=${PGID} # default group id, defined in .env
