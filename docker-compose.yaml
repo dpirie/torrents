@@ -2,7 +2,6 @@
 # 2.   https://www.smarthomebeginner.com/docker-home-media-server-2018-basic/
 # 3.   https://blog.swakes.co.uk/automated-media-box-part3/
 
-version: "2.2"
 services:
 
   plex:
@@ -38,25 +37,26 @@ services:
         gelf-address: "udp://192.168.0.2:12201"
         tag: "plex"
 
-  torrent:
-    container_name: torrent
-    image: horjulf/rutorrent-autodl
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
     restart: unless-stopped
     environment:
       - TZ="${TZ}"
       - PUID=${PUID}
       - PGID=${PGID}
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
     volumes:
-      - "/vault/home/torrents:/config:rw"
-      - "/media:/media:rw"
+      - "/vault/home/qbittorrent/appdata:/config:rw"
+      - "/media:/downloads:rw"
     dns:
       - "8.8.8.8"
       - "8.8.4.4"
     ports:
-      - "8081:80"
-      - "5000:5000"
-      - "51413:51413"
-      - "6881:6881/udp"
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
 
   # Get the latest download URL for Deluge Extractor (https://github.com/cvarta/deluge-extractor/releases), then:
   # Having said that, the last release was years ago, so it's likely exactly the same as below:
@@ -68,6 +68,8 @@ services:
     image: linuxserver/deluge:latest
     restart: unless-stopped
     network_mode: host   # This is Required
+    depends_on: 
+      - plex
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -167,23 +169,6 @@ services:
       - /media:/media
     ports:
       - 6767:6767
-    restart: unless-stopped
-
-  readarr:
-    image: lscr.io/linuxserver/readarr:develop
-    container_name: readarr
-    environment:
-      - PUID=${PUID} # default user id, defined in .env
-      - PGID=${PGID} # default group id, defined in .env
-      - TZ=${TZ} # timezone, defined in .env
-    dns:
-      - "8.8.8.8"
-      - "8.8.4.4"
-    volumes:
-      - /vault/home/readarr:/config # config files
-      - /media:/media
-    ports:
-      - 8787:8787
     restart: unless-stopped
 
   tautulli:

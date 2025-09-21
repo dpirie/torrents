@@ -2,24 +2,6 @@
 
 I used to run Plex and ruTorrent on FreeNAS 9. It served me well for a long, long time but managing Jails was a pain and the 9 to 11 upgrade was quite daunting. Meanwhile, I was doing a lot of Docker container development at work. I found articles about ZFS on Linux and figured if I could mount my old files in Linux, I could configure and run all the services I need using Docker Containers, all managed with one docker-compose.yml file.
 
-## Hardware and Booting
-
-FreeNAS had its boot and root filesystems on a USB thumb drive. All of your own data and a small amount of configuration was stored on the ZFS filesystem. All the log file writes to the USB drive would eventually cause fatigue and corruption.
-
-To mirror, yet modernize this architecture, I moved the root filesystem to an NVMe card using this [adapter](https://www.memoryexpress.com/Products/MX75791). My old motherboard was unable to boot from the card, so I reinstalled Ubuntu (latest LTS Version) with the boot volume on a small, old USB thumbdrive. There's no writing to this boot volume so fatigue will not be a problem.
-
-| File System | Physical |
-|-------------|----------|
-| /boot       | USB Thumb Drive       |
-| /           | NVMe through Adapter  |
-| /vault      | ZFS pool from FreeNAS |
-
-## Upgrade and Backout Plan
-
-If you keep the old FreeNAS boot drive handy, you can install Ubuntu on the new drives and configure everything. If you run out of your change window and the tiny humans are getting restless without Plex, you can shutdown and reboot in to FreeNAS.
-
-You can continue in this dual-boot scenario for some time, as long as you do not upgrade the filesystem with `zfs upgrade`.
-
 ## Relevant Articles
 * https://github.com/sebgl/htpc-download-box - This was the main inspiration for all these containers. Also includes configurations for Jackett and a VPN container.
 * https://www.smarthomebeginner.com/docker-home-media-server-2018-basic/
@@ -30,7 +12,18 @@ You can continue in this dual-boot scenario for some time, as long as you do not
 To mount the FreeNAS ZFS volume, we have to install a number of packages:
 ```sh
 sudo apt install smartmontools htop zfsutils-linux bonnie++ unzip lm-sensors ctop
-sudo apt install docker-ce docker-compose
+sudo apt install docker.io docker-compose
+
+sudo groupadd -g 972 torrents
+sudo useradd -g torrents -u 972 -M -s $(which false) torrents
+sudo usermod -a -G torrents,docker $USER
+
+sudo visudo
+## Add:     dave ALL=(ALL) NOPASSWD: ALL
+
+echo 0 | sudo tee   /proc/sys/fs/protected_hardlinks
+echo "fs.protected_hardlinks = 0" | sudo tee /etc/sysctl.d/98-hardlinks.conf
+
 # This is so we can also mount exFAT thumb drives (FAT32 without 4GB limit)
 sudo apt install exfat-fuse exfat-utils
 sudo reboot -n
@@ -66,12 +59,6 @@ HOST_IP="192.168.0.2"
 All of the containers set their timezone to `TZ` and run their primary process with those UID/GID values. This way, all subdirectories and files are created as and owned by the same user, so you should (generally) not have file permission issues.
 
 Plex needs to advertise it's local IP, which is different than the container's IP address, so we have to specifically configure it here. The value is the main IP address of your Linux host.
-
-The UID and GID values should be set to the same numeric IDs as your own FreeNAS volume (`ls -aldn /media`). You'll find it helpful to create users for these IDs, so you can refer to them symbollically.
-```sh
-sudo groupadd -g 972 torrents
-sudo useradd -g torrents -u 972 -M -s $(which false) torrents
-```
 
 The `umask` in many of the containers is set to `002` so all files and directories are group-writable. If you add your own Ubuntu user to the torrent group, you'll be able to easily manage the files and directories.
 
